@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "title": "会话标签",
+    "description": "为工作区会话展示彩色标签——位于侧栏会话行的时间右侧与会话详情页标题右侧——支持添加、悬停移除与拖动排序。"
+  },
+  "row": {
+    "tagsAria": "会话标签：{tags}"
+  },
+  "header": {
+    "addTitle": "添加标签",
+    "addAria": "为此会话添加标签"
+  },
+  "editor": {
+    "placeholder": "标签文字",
+    "add": "添加",
+    "limitAria": "每个会话最多 {count} 个标签",
+    "colorAria": "颜色：{color}"
+  },
+  "chip": {
+    "removeAria": "移除标签 {text}",
+    "dragAria": "拖动排序标签 {text}"
+  }
+}

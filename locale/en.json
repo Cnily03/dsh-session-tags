@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "title": "Session Tags",
+    "description": "Shows colored tags on workspace sessions — in the sidebar row next to the time and in the conversation header next to the title — with add, remove, and drag-to-reorder editing."
+  },
+  "row": {
+    "tagsAria": "Session tags: {tags}"
+  },
+  "header": {
+    "addTitle": "Add tag",
+    "addAria": "Add a tag to this session"
+  },
+  "editor": {
+    "placeholder": "Tag text",
+    "add": "Add",
+    "limitAria": "At most {count} tags per session",
+    "colorAria": "Color: {color}"
+  },
+  "chip": {
+    "removeAria": "Remove tag {text}",
+    "dragAria": "Reorder tag {text}"
+  }
+}

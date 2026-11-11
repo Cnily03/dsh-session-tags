@@ -1,0 +1,11 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Session Tags">
+  <path d="M12 6.5H18.4Q19.3 6.5 19.9 7.1L29.2 16.4Q30.6 17.8 29.2 19.2L22.7 25.7Q21.3 27.1 19.9 25.7L10.6 16.4Q10 15.8 10 14.9V8.5Q10 6.5 12 6.5Z" fill="#7CB7FF" fill-opacity=".55" />
+  <path d="M8 10H14.4Q15.3 10 15.9 10.6L25.2 19.9Q26.6 21.3 25.2 22.7L18.7 29.2Q17.3 30.6 15.9 29.2L6.6 19.9Q6 19.3 6 18.4V12Q6 10 8 10Z" fill="url(#tag)" />
+  <circle cx="11" cy="15" r="1.8" fill="white" />
+  <defs>
+    <linearGradient id="tag" x1="6" y1="10" x2="25" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6FB2EE" />
+      <stop offset="1" stop-color="#3E58D6" />
+    </linearGradient>
+  </defs>
+</svg>
