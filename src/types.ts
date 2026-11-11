@@ -22,11 +22,13 @@ export type LocaleParams = Record<string, string>
 /** The bound translator returned by `ctx.locale.bind`. */
 export type Translate = (key: string, params?: LocaleParams) => string
 
-/** One tag on one Session: a stable id, a preset color key, and the label. */
+/** One tag on one Session: a stable id, a preset color key, the label, and
+ * whether the tag is pinned to the sidebar session list. */
 export interface Tag {
   readonly id: string
   readonly color: PresetColor
   readonly text: string
+  readonly fixed: boolean
 }
 
 /** Every Session's tags, keyed by Session id. */

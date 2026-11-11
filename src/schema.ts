@@ -4,7 +4,8 @@
  * consumes only a schema's `parse` (validating stored records at open), so this
  * hand-rolled validator keeps the bundle dependency-free while enforcing
  * exactly the stored shape: one `tags` array of preset-colored tags with
- * bounded ids and labels.
+ * bounded ids, labels, and a pin flag. Records written before the pin flag
+ * existed parse with `fixed: false`.
  *
  * @module dsh-session-tags/schema
  */
@@ -34,7 +35,7 @@ const isPresetColor = (value: string): value is PresetColor => (PRESET_COLORS as
 /** Validate one unknown as a single stored tag. */
 const parseTag = (raw: unknown, index: number): Tag => {
   if (!isRecord(raw)) fail(`[${index}]`, 'expected a tag object')
-  const { id, color, text } = raw
+  const { id, color, text, fixed } = raw
   if (typeof id !== 'string' || id.length < 1 || id.length > MAX_ID_LENGTH) {
     fail(`[${index}].id`, `expected a string of 1-${MAX_ID_LENGTH} characters`)
   }
@@ -44,7 +45,8 @@ const parseTag = (raw: unknown, index: number): Tag => {
   if (typeof text !== 'string' || text.trim().length < 1 || text.length > MAX_TEXT_LENGTH) {
     fail(`[${index}].text`, `expected a string of 1-${MAX_TEXT_LENGTH} characters after trimming`)
   }
-  return { id, color, text: text.trim() }
+  if (fixed !== undefined && typeof fixed !== 'boolean') fail(`[${index}].fixed`, 'expected a boolean')
+  return { id, color, text: text.trim(), fixed: fixed === true }
 }
 
 /** Validate one unknown as one whole stored record. */

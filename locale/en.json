@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Session Tags",
-    "description": "Shows colored tags on workspace sessions — in the sidebar row next to the time and in the conversation header next to the title — with add, remove, and drag-to-reorder editing."
+    "description": "Shows colored tags on workspace sessions — in the sidebar row next to the time and in the conversation header next to the title — with add, remove, drag-to-reorder editing, and a pin toggle that deepens the chip and puts it on the sidebar row."
   },
   "row": {
     "tagsAria": "Session tags: {tags}"
@@ -18,6 +18,8 @@
   },
   "chip": {
     "removeAria": "Remove tag {text}",
-    "dragAria": "Reorder tag {text}"
+    "fixAria": "Toggle pinning tag {text} to the session list",
+    "fixTitle": "Pin to the session list",
+    "unfixTitle": "Unpin from the session list"
   }
 }

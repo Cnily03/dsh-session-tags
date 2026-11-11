@@ -131,21 +131,26 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The read-only chip cluster for one sidebar row. Plain spans only: no
-     * handlers, no drag, so the row's own click-to-open and drag-to-reorder
-     * keep working through the cluster.
+     * The read-only chip cluster for one sidebar row, showing the session's
+     * pinned tags. Plain spans only: no handlers, no drag, so the row's own
+     * click-to-open and drag-to-reorder keep working through the cluster.
      */
     function SessionRowTags(props: RowTagsProps): unknown {
       const tags = useTags(props.sessionId, props.tagStore)
-      if (tags.length === 0) return null
+      const pinned = tags.filter((tag) => tag.fixed)
+      if (pinned.length === 0) return null
       return h(
         'span',
         {
           className: ROW_TAGS_CLASS,
-          'aria-label': props.t('row.tagsAria', { tags: tags.map((tag) => tag.text).join(', ') }),
+          'aria-label': props.t('row.tagsAria', { tags: pinned.map((tag) => tag.text).join(', ') }),
         },
-        tags.map((tag) =>
-          h('span', { key: tag.id, className: CHIP_CLASS, 'data-color': tag.color, title: tag.text }, tag.text),
+        pinned.map((tag) =>
+          h(
+            'span',
+            { key: tag.id, className: CHIP_CLASS, 'data-color': tag.color, 'data-fixed': 'true', title: tag.text },
+            tag.text,
+          ),
         ),
       )
     }
@@ -155,6 +160,7 @@ window.__ModuleLoader__.load({
       readonly t: Translate
       readonly dragging: boolean
       readonly drop: 'before' | 'after' | undefined
+      readonly onToggleFixed: () => void
       readonly onRemove: () => void
       readonly onDragStart: (id: string) => void
       readonly onDragEnd: () => void
@@ -162,7 +168,12 @@ window.__ModuleLoader__.load({
       readonly onDrop: (draggedId: string, targetId: string, side: 'before' | 'after') => void
     }
 
-    /** One header chip: label, hover remove, and drag-to-reorder wiring. */
+    /**
+     * One header chip: label, hover remove, drag-to-reorder wiring, and the
+     * pin toggle. Clicking the chip flips its pin — the shading deepens and
+     * the sidebar row starts (or stops) showing it; a drag that moves the chip
+     * suppresses the click, so reordering never toggles.
+     */
     function TagChip(props: ChipProps): unknown {
       const { tag, t } = props
       const chipRef = React.useRef<HTMLElement | null>(null)
@@ -172,51 +183,65 @@ window.__ModuleLoader__.load({
         return event.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
       }
       return h(
-        'span',
+        Tooltip,
         {
-          ref: chipRef,
-          className: CHIP_CLASS,
-          'data-color': tag.color,
-          'data-dragging': props.dragging ? 'true' : undefined,
-          'data-drop': props.drop,
-          title: tag.text,
-          draggable: true,
-          'aria-label': t('chip.dragAria', { text: tag.text }),
-          onDragStart: (event: DragLike) => {
-            if (event.dataTransfer !== null) {
-              event.dataTransfer.setData('application/x-dsh-session-tag', tag.id)
-              event.dataTransfer.effectAllowed = 'move'
-            }
-            props.onDragStart(tag.id)
-          },
-          onDragEnd: props.onDragEnd,
-          onDragOver: (event: DragLike) => {
-            if (event.dataTransfer === null) return
-            if (!event.dataTransfer.types.includes('application/x-dsh-session-tag')) return
-            event.preventDefault()
-            event.dataTransfer.dropEffect = 'move'
-            props.onDragOver(tag.id, sideOf(event))
-          },
-          onDrop: (event: DragLike) => {
-            const draggedId = event.dataTransfer?.getData('application/x-dsh-session-tag')
-            if (draggedId === null || draggedId === undefined || draggedId === '') return
-            event.preventDefault()
-            props.onDrop(draggedId, tag.id, sideOf(event))
-          },
+          label: t(tag.fixed ? 'chip.unfixTitle' : 'chip.fixTitle', { text: tag.text }),
+          side: 'bottom',
+          delayMs: 500,
+          portal: true,
         },
-        tag.text,
         h(
-          'button',
+          'span',
           {
-            type: 'button',
-            className: REMOVE_CLASS,
-            'aria-label': t('chip.removeAria', { text: tag.text }),
+            ref: chipRef,
+            className: CHIP_CLASS,
+            'data-color': tag.color,
+            'data-fixed': tag.fixed ? 'true' : undefined,
+            'data-dragging': props.dragging ? 'true' : undefined,
+            'data-drop': props.drop,
+            draggable: true,
+            'aria-pressed': tag.fixed ? 'true' : 'false',
+            'aria-label': t('chip.fixAria', { text: tag.text }),
             onClick: (event: ClickLike) => {
               event.stopPropagation()
-              props.onRemove()
+              props.onToggleFixed()
+            },
+            onDragStart: (event: DragLike) => {
+              if (event.dataTransfer !== null) {
+                event.dataTransfer.setData('application/x-dsh-session-tag', tag.id)
+                event.dataTransfer.effectAllowed = 'move'
+              }
+              props.onDragStart(tag.id)
+            },
+            onDragEnd: props.onDragEnd,
+            onDragOver: (event: DragLike) => {
+              if (event.dataTransfer === null) return
+              if (!event.dataTransfer.types.includes('application/x-dsh-session-tag')) return
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+              props.onDragOver(tag.id, sideOf(event))
+            },
+            onDrop: (event: DragLike) => {
+              const draggedId = event.dataTransfer?.getData('application/x-dsh-session-tag')
+              if (draggedId === null || draggedId === undefined || draggedId === '') return
+              event.preventDefault()
+              props.onDrop(draggedId, tag.id, sideOf(event))
             },
           },
-          h(IconCloseOutlineRegular, { size: 10 }),
+          tag.text,
+          h(
+            'button',
+            {
+              type: 'button',
+              className: REMOVE_CLASS,
+              'aria-label': t('chip.removeAria', { text: tag.text }),
+              onClick: (event: ClickLike) => {
+                event.stopPropagation()
+                props.onRemove()
+              },
+            },
+            h(IconCloseOutlineRegular, { size: 10 }),
+          ),
         ),
       )
     }
@@ -351,7 +376,9 @@ window.__ModuleLoader__.load({
      * The editable chip cluster for one conversation header. Every mutation
      * goes through `saveTags`, which publishes the next list into the shared
      * store before the POST — so the sidebar row for the same session
-     * re-renders immediately — and reverts on refusal.
+     * re-renders immediately — and reverts on refusal. New tags start
+     * unpinned; clicking a chip pins it, deepening its shade and putting it
+     * on the session's sidebar row.
      */
     function SessionHeaderTags(props: HeaderTagsProps): unknown {
       const tags = useTags(props.sessionId, props.tagStore)
@@ -365,7 +392,11 @@ window.__ModuleLoader__.load({
       }
 
       const addTag = (text: string, color: PresetColor): void => {
-        commit([...tags, { id: newId(), color, text }])
+        commit([...tags, { id: newId(), color, text, fixed: false }])
+      }
+
+      const toggleFixed = (id: string): void => {
+        commit(tags.map((tag) => (tag.id === id ? { ...tag, fixed: !tag.fixed } : tag)))
       }
 
       const reorder = (draggedId: string, targetId: string, side: 'before' | 'after'): void => {
@@ -389,6 +420,9 @@ window.__ModuleLoader__.load({
             t: props.t,
             dragging: draggingId === tag.id,
             drop: dropTarget?.id === tag.id ? dropTarget.side : undefined,
+            onToggleFixed: () => {
+              toggleFixed(tag.id)
+            },
             onRemove: () => {
               commit(tags.filter((tag2) => tag2.id !== tag.id))
             },

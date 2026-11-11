@@ -70,11 +70,15 @@ export const CSS = [
   '.adst_headerTags{box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;flex:none;min-width:0}',
   // One chip: the shipped tag metrics (11px/17px label in a 20px pill body for
   // the header, 10px/16px in 18px for the sidebar row) with the small radius
-  // this plugin calls for, painted as a 12% tint under the preset's own color.
+  // this plugin calls for. An unpinned chip is a light 12% tint under the
+  // preset's own color; a pinned chip paints the preset solid with a white
+  // label — the shipped tag's "solid" tone — so the click reads as a shade
+  // deepening and the sidebar row shows only these.
   '.adst_chip{box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;height:18px;',
   'padding:0 6px;border-radius:var(--dsw-radius-xs);font-size:10px;line-height:16px;font-weight:500;',
   'white-space:nowrap;flex:none;background:color-mix(in srgb,var(--adst-c) 12%,transparent);color:var(--adst-c)}',
-  '.adst_headerTags .adst_chip{height:20px;padding:0 7px;font-size:11px;line-height:17px}',
+  '.adst_chip[data-fixed="true"]{background:var(--adst-c);color:#fff}',
+  '.adst_headerTags .adst_chip{height:20px;padding:0 7px;font-size:11px;line-height:17px;cursor:pointer}',
   // The remove affordance lives inside the chip and only exists while the chip
   // is hovered or focused, exactly at the chip's inline end.
   '.adst_remove{box-sizing:border-box;width:14px;height:14px;margin:0 -2px 0 1px;padding:0;border:none;',
@@ -97,6 +101,8 @@ export const CSS = [
   '.adst_chip[data-dragging="true"]{opacity:.45}',
   '.adst_chip[data-drop="before"]{box-shadow:inset 2px 0 0 var(--adst-c)}',
   '.adst_chip[data-drop="after"]{box-shadow:inset -2px 0 0 var(--adst-c)}',
+  '.adst_chip[data-fixed="true"][data-drop="before"]{box-shadow:inset 2px 0 0 #fff}',
+  '.adst_chip[data-fixed="true"][data-drop="after"]{box-shadow:inset -2px 0 0 #fff}',
   // The add-tag popover: fixed placement near the button, the overlay surface
   // and radius the shipped toasts use, and a safe shadow fallback.
   '.adst_pop{box-sizing:border-box;position:fixed;width:248px;padding:10px;display:flex;',

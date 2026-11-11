@@ -40,7 +40,9 @@ const en: Dictionary = {
   'editor.limitAria': 'At most {count} tags per session',
   'editor.colorAria': 'Color: {color}',
   'chip.removeAria': 'Remove tag {text}',
-  'chip.dragAria': 'Reorder tag {text}',
+  'chip.fixAria': 'Toggle pinning tag {text} to the session list',
+  'chip.fixTitle': 'Pin to the session list',
+  'chip.unfixTitle': 'Unpin from the session list',
 }
 
 const zh: Dictionary = {
@@ -52,7 +54,9 @@ const zh: Dictionary = {
   'editor.limitAria': '每个会话最多 {count} 个标签',
   'editor.colorAria': '颜色：{color}',
   'chip.removeAria': '移除标签 {text}',
-  'chip.dragAria': '拖动排序标签 {text}',
+  'chip.fixAria': '切换标签 {text} 在会话列表的固定状态',
+  'chip.fixTitle': '固定到会话列表',
+  'chip.unfixTitle': '从会话列表取消固定',
 }
 
 /** The two shipped-language dictionaries, keyed by locale. */
