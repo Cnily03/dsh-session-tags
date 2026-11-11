@@ -1,0 +1,87 @@
+{
+  "name": "dsh-session-tags",
+  "version": "0.1.0",
+  "description": "Colored tags for DeepSeek Harness sessions, shown in the sidebar row and the conversation header, editable with preset colors, hover-remove, and drag-to-reorder.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Cnily03",
+  "homepage": "https://github.com/Cnily03/dsh-session-tags#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cnily03/dsh-session-tags.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Cnily03/dsh-session-tags/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "session",
+    "session-management",
+    "tags",
+    "labels",
+    "sidebar",
+    "ui"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./client": "./dist/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "dist",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "scripts": {
+    "postinstall": "biome migrate --write || true",
+    "prepare": "pnpm build",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "format": "biome check --write",
+    "lint": "biome lint",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@types/node": "^24.6.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "zod": "^4.1.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-primitives",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.0.0",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=12.0.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.17.0+sha512.b8d223ebec04b580a89ed206daa71d1bccb6a1ee1d52efa95cc3b0db75271561df8f0d8e2c43add39c5ec08018af7a8a95108e7090f95a29f88727b7a40fd53d"
+}
