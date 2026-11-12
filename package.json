@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-tags",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Colored tags for DeepSeek Harness sessions, shown in the sidebar row and the conversation header, editable with preset colors, hover-remove, and drag-to-reorder.",
   "type": "module",
   "license": "MIT",
