@@ -2,14 +2,14 @@
  * Client half of the session-tags bundle. Registers read-only tag chips into
  * the sidebar session row (right of the row's time) and an editable chip row
  * into the conversation header (right of the title): header chips remove on
- * hover and reorder by drag, the trailing outline tag opens a popover with a
- * text field and the seven preset colors, and every save publishes through the
- * shared tag store first so both surfaces re-render together — the sidebar row
- * and the header stay in sync without a round trip.
+ * hover, reorder by drag, and pin on click; the trailing outline tag opens the
+ * shipped Menu with a text field and the seven preset colors; and every save
+ * publishes through the shared tag store first so both surfaces re-render
+ * together — the sidebar row and the header stay in sync without a round trip.
  *
- * Loaded through `window.__ModuleLoader__.load`; `react`, `react-dom`, and the
- * shipped UI primitives are resolved at runtime through the injected `require`,
- * never bundled, so this stays a thin wrapper over the host's own components.
+ * Loaded through `window.__ModuleLoader__.load`; `react` and the shipped UI
+ * primitives are resolved at runtime through the injected `require`, never
+ * bundled, so this stays a thin wrapper over the host's own components.
  *
  * @module dsh-session-tags/client
  */
@@ -23,12 +23,16 @@ import {
   CONFIRM_CLASS,
   CSS,
   HEADER_TAGS_CLASS,
+  PIN_CLASS,
+  POP_ANIMATION_MS,
+  POP_BODY_CLASS,
   POP_CLASS,
   POP_INPUT_CLASS,
   REMOVE_CLASS,
   ROW_TAGS_CLASS,
   SWATCH_CLASS,
   SWATCHES_CLASS,
+  TEXT_CLASS,
 } from './styles'
 import { createTagStore, type TagStore } from './tag-store'
 import type { SaveOutcome, SessionId, SetTags, Tag, TagMap, Translate } from './types'
@@ -51,7 +55,7 @@ interface ReactLike {
   ): unknown
 }
 
-/** The sliver of `react-dom` the popover needs. */
+/** The sliver of `react-dom` the panel's body portal needs. */
 interface ReactDOMLike {
   createPortal(children: unknown, container: Element): unknown
 }
@@ -100,15 +104,18 @@ window.__ModuleLoader__.load({
   id: 'dsh-session-tags',
   factory(require) {
     const React = require('react') as ReactLike
-    const createPortal = (require('react-dom') as ReactDOMLike).createPortal
     const h = React.createElement
-    // The shell's static module table serves the shipped UI primitives, so the
-    // tag controls reuse the exact Tooltip the native controls use — same
-    // tooltip placement and timing — plus the icon glyphs and input shell.
+    // The shell's static module table serves the shipped UI primitives and the
+    // React runtime, so the tag controls reuse the exact Tooltip and Input the
+    // native controls use — same tooltip placement and timing, same input
+    // shell — plus the shipped glyphs, including the outline pin, and the
+    // portal that lifts the panel out of the header's stacking context.
+    const createPortal = (require('react-dom') as ReactDOMLike).createPortal
     const primitives = require('@deepseek-ai/dsh-client-ui-primitives')
     const IconPlusOutlineRegular = primitives.IconPlusOutlineRegular
     const IconCloseOutlineRegular = primitives.IconCloseOutlineRegular
     const IconCheckOutlineRegular = primitives.IconCheckOutlineRegular
+    const IconPinOutlineRegular = primitives.IconPinOutlineRegular
     const Tooltip = primitives.Tooltip
     const Input = primitives.Input
 
@@ -132,8 +139,9 @@ window.__ModuleLoader__.load({
 
     /**
      * The read-only chip cluster for one sidebar row, showing the session's
-     * pinned tags. Plain spans only: no handlers, no drag, so the row's own
-     * click-to-open and drag-to-reorder keep working through the cluster.
+     * pinned tags as plain text-only chips — no pin glyph, no handlers, no
+     * drag — so the row's own click-to-open and drag-to-reorder keep working
+     * through the cluster and the list stays as calm as its time cell.
      */
     function SessionRowTags(props: RowTagsProps): unknown {
       const tags = useTags(props.sessionId, props.tagStore)
@@ -148,8 +156,8 @@ window.__ModuleLoader__.load({
         pinned.map((tag) =>
           h(
             'span',
-            { key: tag.id, className: CHIP_CLASS, 'data-color': tag.color, 'data-fixed': 'true', title: tag.text },
-            tag.text,
+            { key: tag.id, className: CHIP_CLASS, 'data-color': tag.color, title: tag.text },
+            h('span', { className: TEXT_CLASS }, tag.text),
           ),
         ),
       )
@@ -196,7 +204,7 @@ window.__ModuleLoader__.load({
             ref: chipRef,
             className: CHIP_CLASS,
             'data-color': tag.color,
-            'data-fixed': tag.fixed ? 'true' : undefined,
+            'data-interactive': 'true',
             'data-dragging': props.dragging ? 'true' : undefined,
             'data-drop': props.drop,
             draggable: true,
@@ -228,7 +236,8 @@ window.__ModuleLoader__.load({
               props.onDrop(draggedId, tag.id, sideOf(event))
             },
           },
-          tag.text,
+          tag.fixed ? h(IconPinOutlineRegular, { size: 12, className: PIN_CLASS }) : null,
+          h('span', { className: TEXT_CLASS }, tag.text),
           h(
             'button',
             {
@@ -248,6 +257,7 @@ window.__ModuleLoader__.load({
 
     interface EditorProps {
       readonly anchor: Element | null
+      readonly closing: boolean
       readonly atCap: boolean
       readonly t: Translate
       readonly onAdd: (text: string, color: PresetColor) => void
@@ -255,15 +265,20 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The add-tag popover: a text field, the seven preset swatches, and the
-     * confirm action, anchored just under the add button. Escape closes, a
-     * pointerdown outside closes, Enter adds (IME-safe), and a successful add
-     * clears the field and keeps the popover open for the next tag.
+     * The add-tag panel: a text field, the seven preset swatches, and the
+     * confirm action, anchored under the add button on the shipped menu
+     * surface tokens. The placement is measured once when the panel opens and
+     * then stays fixed on the page — it never follows the anchor afterwards.
+     * The panel ports to the document body so no ancestor stacking context
+     * can cover it. While closing it plays the exit fade and then unmounts.
+     * Escape closes, a pointerdown outside closes, Enter adds (IME-safe), and
+     * a successful add clears the field and keeps the panel open for the next
+     * tag.
      */
     function TagEditorPopover(props: EditorProps): unknown {
       const [text, setText] = React.useState('')
       const [color, setColor] = React.useState<PresetColor>(PRESET_COLORS[0])
-      const panelRef = React.useRef<HTMLDivElement | null>(null)
+      const panelRef = React.useRef<HTMLElement | null>(null)
       const inputRef = React.useRef<HTMLInputElement | null>(null)
       const trimmed = text.trim()
 
@@ -272,8 +287,8 @@ window.__ModuleLoader__.load({
         rect === undefined
           ? {}
           : {
-              top: `${Math.round(rect.bottom + 6)}px`,
-              left: `${Math.max(8, Math.min(rect.left, window.innerWidth - 264))}px`,
+              top: `${Math.round(rect.bottom + 8)}px`,
+              left: `${Math.max(8, Math.min(rect.left, window.innerWidth - 256))}px`,
             }
 
       React.useLayoutEffect(() => {
@@ -281,6 +296,7 @@ window.__ModuleLoader__.load({
       }, [])
 
       React.useEffect(() => {
+        if (props.closing) return
         const onPointerDown = (event: PointerEvent): void => {
           const target = event.target
           if (target instanceof Node && panelRef.current?.contains(target) === true) return
@@ -291,7 +307,7 @@ window.__ModuleLoader__.load({
         return () => {
           document.removeEventListener('pointerdown', onPointerDown, true)
         }
-      }, [props.anchor, props.onClose])
+      }, [props.anchor, props.onClose, props.closing])
 
       const submit = (): void => {
         if (trimmed === '' || trimmed.length > MAX_TEXT_LENGTH || props.atCap) return
@@ -315,50 +331,61 @@ window.__ModuleLoader__.load({
       return createPortal(
         h(
           'div',
-          { ref: panelRef, className: POP_CLASS, style, role: 'dialog', 'aria-label': props.t('header.addTitle') },
-          h(Input, {
-            ref: inputRef,
-            className: POP_INPUT_CLASS,
-            value: text,
-            placeholder: props.t('editor.placeholder'),
-            maxLength: MAX_TEXT_LENGTH,
-            autoFocus: true,
-            onChange: (event: ChangeLike) => {
-              setText(event.target.value)
-            },
-            onKeyDown,
-          }),
+          {
+            ref: panelRef,
+            className: POP_CLASS,
+            style,
+            role: 'dialog',
+            'aria-label': props.t('header.addTitle'),
+            'data-closing': props.closing ? 'true' : undefined,
+          },
           h(
             'span',
-            { className: SWATCHES_CLASS, role: 'group' },
-            PRESET_COLORS.map((preset) =>
-              h(
-                'button',
-                {
-                  key: preset,
-                  type: 'button',
-                  className: SWATCH_CLASS,
-                  'data-color': preset,
-                  'aria-pressed': color === preset ? 'true' : 'false',
-                  'aria-label': props.t('editor.colorAria', { color: preset }),
-                  onClick: () => {
-                    setColor(preset)
+            { className: POP_BODY_CLASS },
+            h(Input, {
+              ref: inputRef,
+              className: POP_INPUT_CLASS,
+              value: text,
+              placeholder: props.t('editor.placeholder'),
+              maxLength: MAX_TEXT_LENGTH,
+              autoFocus: true,
+              onChange: (event: ChangeLike) => {
+                setText(event.target.value)
+              },
+              onKeyDown,
+            }),
+            h(
+              'span',
+              { className: SWATCHES_CLASS, role: 'group' },
+              PRESET_COLORS.map((preset) =>
+                h(
+                  'button',
+                  {
+                    key: preset,
+                    type: 'button',
+                    className: SWATCH_CLASS,
+                    'data-color': preset,
+                    'aria-pressed': color === preset ? 'true' : 'false',
+                    'aria-label': props.t('editor.colorAria', { color: preset }),
+                    onClick: () => {
+                      setColor(preset)
+                    },
                   },
-                },
-                color === preset ? h(IconCheckOutlineRegular, { size: 12 }) : null,
+                  color === preset ? h(IconCheckOutlineRegular, { size: 12 }) : null,
+                ),
               ),
             ),
-          ),
-          h(
-            'button',
-            {
-              type: 'button',
-              className: CONFIRM_CLASS,
-              disabled: trimmed === '' || props.atCap,
-              title: props.atCap ? props.t('editor.limitAria', { count: String(MAX_TAGS) }) : undefined,
-              onClick: submit,
-            },
-            props.t('editor.add'),
+            h(
+              'button',
+              {
+                type: 'button',
+                className: CONFIRM_CLASS,
+                disabled: trimmed === '' || props.atCap,
+                title: props.atCap ? props.t('editor.limitAria', { count: String(MAX_TAGS) }) : undefined,
+                onClick: submit,
+              },
+              props.t('editor.add'),
+            ),
           ),
         ),
         document.body,
@@ -377,15 +404,27 @@ window.__ModuleLoader__.load({
      * goes through `saveTags`, which publishes the next list into the shared
      * store before the POST — so the sidebar row for the same session
      * re-renders immediately — and reverts on refusal. New tags start
-     * unpinned; clicking a chip pins it, deepening its shade and putting it
-     * on the session's sidebar row.
+     * unpinned; clicking a chip pins it — its leading pin glyph appears and
+     * the sidebar row starts (or stops) showing it. The add-tag panel cycles
+     * closed → open → closing: while it is fading out, the add button does
+     * nothing, so a reopened panel can never ride a closing one.
      */
     function SessionHeaderTags(props: HeaderTagsProps): unknown {
       const tags = useTags(props.sessionId, props.tagStore)
       const [draggingId, setDraggingId] = React.useState<string | null>(null)
       const [dropTarget, setDropTarget] = React.useState<{ id: string; side: 'before' | 'after' } | null>(null)
-      const [editorOpen, setEditorOpen] = React.useState(false)
+      const [editorPhase, setEditorPhase] = React.useState<'closed' | 'open' | 'closing'>('closed')
       const addButtonRef = React.useRef<HTMLButtonElement | null>(null)
+
+      React.useEffect(() => {
+        if (editorPhase !== 'closing') return
+        const timer = setTimeout(() => {
+          setEditorPhase('closed')
+        }, POP_ANIMATION_MS)
+        return () => {
+          clearTimeout(timer)
+        }
+      }, [editorPhase])
 
       const commit = (next: readonly Tag[]): void => {
         void props.saveTags(props.sessionId, next)
@@ -451,26 +490,28 @@ window.__ModuleLoader__.load({
               ref: addButtonRef,
               className: ADD_CLASS,
               'aria-label': props.t('header.addAria'),
-              'aria-expanded': editorOpen ? 'true' : 'false',
+              'aria-expanded': editorPhase === 'open' ? 'true' : 'false',
               onClick: (event: ClickLike) => {
                 event.stopPropagation()
-                setEditorOpen((open) => !open)
+                if (editorPhase === 'closing') return
+                setEditorPhase(editorPhase === 'open' ? 'closing' : 'open')
               },
             },
-            h(IconPlusOutlineRegular, { size: 12 }),
+            h(IconPlusOutlineRegular, { size: 10 }),
           ),
         ),
-        editorOpen
-          ? h(TagEditorPopover, {
+        editorPhase === 'closed'
+          ? null
+          : h(TagEditorPopover, {
               anchor: addButtonRef.current,
+              closing: editorPhase === 'closing',
               atCap: tags.length >= MAX_TAGS,
               t: props.t,
               onAdd: addTag,
               onClose: () => {
-                setEditorOpen(false)
+                setEditorPhase('closing')
               },
-            })
-          : null,
+            }),
       )
     }
 
@@ -594,7 +635,10 @@ window.__ModuleLoader__.load({
             {
               name: 'conversation.session.header.actions',
               id: 'session-tags',
-              order: 500,
+              // First in the title-adjacent action row: the slot sorts by
+              // ascending order, DSH's own entries start at -20, and -100
+              // leaves headroom for future native entries before the tags.
+              order: -100,
               locale: NS,
               inject: () => ({ tagStore: store, saveTags }),
             },
