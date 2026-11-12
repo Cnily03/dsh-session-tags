@@ -219,6 +219,7 @@ def header_page(lang):
 .add{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 7px;
   border-radius:4px;flex:none;cursor:pointer;border:.5px solid var(--border-l3);background:transparent;
   color:var(--label-tertiary);font-size:11px;line-height:17px;font-weight:500;white-space:nowrap}
+@media (hover:hover){.add:hover{background:#ffffff14}}
 .pop{position:absolute;top:48px;left:280px;width:248px;padding:8px;display:flex;flex-direction:column;
   border-radius:16px;background:var(--menu-fill);backdrop-filter:blur(40px) saturate(150%);
   box-shadow:0 0 0 .5px var(--border-l3),0 3px 8px 0 #0000000a,0 0 20px 0 #0000000d;z-index:10}

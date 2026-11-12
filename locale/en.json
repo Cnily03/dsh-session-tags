@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Session Tags",
-    "description": "Shows colored tags on workspace sessions — in the sidebar row next to the time and in the conversation header next to the title — with add, remove, drag-to-reorder editing, and a pin toggle that adds a leading pin glyph and puts the tag on the sidebar row."
+    "description": "Add colored tags to sessions, shown in the session list and next to the title of the session detail. Add, remove, and reorder tags; click a tag to pin it to the sidebar."
   },
   "row": {
     "tagsAria": "Session tags: {tags}"

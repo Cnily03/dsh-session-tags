@@ -110,13 +110,14 @@ export const CSS = [
   '.adst_remove:focus-visible{outline-offset:0}',
   '.adst_remove:hover{color:var(--dsw-alias-label-primary)}',
   // The add affordance is a tag-shaped outline button: no fill, a level-3
-  // border, a tertiary label, and the native interactive hover fill.
+  // border, and a tertiary label. Its hover copies the shipped open-in-app
+  // button: behind a hover-capable pointer only the background changes, so the
+  // border color and label color stay put.
   '.adst_add{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;',
   'height:20px;padding:0 7px;border-radius:var(--dsw-radius-xs);flex:none;cursor:pointer;',
   'border:.5px solid var(--dsw-alias-border-l3);background:transparent;',
   'color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:17px;font-weight:500;white-space:nowrap}',
-  '.adst_add:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l4);',
-  'color:var(--dsw-alias-label-primary)}',
+  '@media (hover:hover){.adst_add:hover{background:var(--dsw-alias-interactive-bg-hover)}}',
   '.adst_add:focus-visible{outline-offset:0}',
   // Drag feedback: the dragged chip fades, and the drop target carries a 2px
   // inset marker on the side the drag would land on, mirroring the row's own

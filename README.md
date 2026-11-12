@@ -2,13 +2,13 @@
 
 _**English** | [简体中文](README.zh-CN.md)_
 
-A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugin that shows colored tags on workspace sessions — in the sidebar row, right of the time, and in the conversation header, right of the title. The header row is fully editable: the trailing outline tag adds a tag with one of seven preset colors, hovering a tag reveals its remove button, tags reorder by drag, and every edit syncs both surfaces live. Clicking a tag pins it — a pin glyph appears at its front, and only pinned tags appear on the sidebar row.
+A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugin that adds colored tags to sessions, shown in the session list and next to the title of the session detail. Add, remove, and reorder tags, and click a tag to pin it to the sidebar.
 
 ## Screenshots
 
-| Sidebar row tags | Header editing |
+| Session list | Session detail |
 | --- | --- |
-| ![Session rows with colored tags right of the time](assets/row-tags.en.png) | ![Header tags with the add-tag popover open](assets/header-tags.en.png) |
+| ![Colored tags right of the time in the session list](assets/row-tags.en.png) | ![Tags right of the title in the session detail, with the add-tag popover open](assets/header-tags.en.png) |
 
 ## Install
 
@@ -27,18 +27,18 @@ The desktop app can also install it from its built-in plugin market.
 
 Tags render in two places, both reading the same shared store:
 
-- **Sidebar row** — the session's pinned tags follow the row's time, as plain quiet chips without the pin glyph; the row's own click-to-open and drag-to-reorder keep working through them.
-- **Conversation header** — every tag follows the title. The trailing outline tag opens a panel painted with the shipped menu surface tokens (translucent fill, backdrop blur, elevation), anchored under the button and fixed on the page once it opens. Enter adds (IME-safe), Escape closes, and the panel stays open for adding several tags in a row.
-- **Pinning** — a pinned header tag leads with the shipped pin glyph and the tag appears on the session's sidebar row as a plain chip; clicking again unpins it. Dragging a chip reorders without toggling.
-- **Removing** — hover a header tag and the chip reveals an inline × on its right; one click removes it.
-- **Reordering** — drag any header tag onto another; a side marker shows where it will land.
-- **Live sync** — every edit publishes locally before the POST, so the sidebar row and the header re-render together, without a round trip.
+- **Sidebar row**: the session's pinned tags follow the row's time as plain quiet chips without the pin glyph. The row's own click-to-open and drag-to-reorder keep working through them.
+- **Conversation header**: every tag follows the title. The trailing outline tag opens a panel painted with the shipped menu surface tokens (translucent fill, backdrop blur, elevation). It is anchored under the button and fixed on the page once it opens. Enter adds (IME-safe), Escape closes, and the panel stays open for adding several tags in a row.
+- **Pinning**: a pinned header tag leads with the shipped pin glyph, and the tag appears on the session's sidebar row as a plain chip. Clicking again unpins it. Dragging a chip reorders without toggling.
+- **Removing**: hover a header tag and the chip reveals an inline × on its right. One click removes it.
+- **Reordering**: drag any header tag onto another. A side marker shows where it will land.
+- **Live sync**: every edit publishes locally before the POST, so the sidebar row and the header re-render together without a round trip.
 
 Both surfaces reuse the shipped `Tooltip` and `Input` primitives and the theme's static color tokens, so the chips match the native controls and read correctly in light and dark themes.
 
 ## Where the tags live
 
-Tags persist on the Host side in a `session_tags` storage domain — a schema-validated, durable JSON unit the Harness keeps under its configured storage root — so they survive restarts and follow the profile. Each Session's list is capped at 32 tags with 1–32 character labels. When a Session is deleted (its log and live Agent are both gone), a startup sweep removes its record, so deleted Sessions leave no tags behind.
+Tags persist on the Host side in a `session_tags` storage domain. It is a schema-validated, durable JSON unit that the Harness keeps under its configured storage root, so tags survive restarts and follow the profile. Each Session's list is capped at 32 tags with 1–32 character labels. When a Session is deleted (its log and live Agent are both gone), a startup sweep removes its record, so deleted Sessions leave no tags behind.
 
 Edits sync live within one client. The Harness's Host-to-client push channel is closed to plugins, so a second browser tab sees new tags after a refresh.
 
